@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
+import { unifyStatusLabel, badgeClass, stripClass } from '../viewHints'
+import { bumpSaturation } from '../saturationBus'
 const trips = ref<any[]>([])
 const events = ref<any[]>([])
 async function refreshEvents() {
@@ -14,24 +16,16 @@ onMounted(async () => {
 })
 async function toggleSaturated(r: any, ev: Event) {
   const saturated = (ev.target as HTMLInputElement).checked
+  // 先等后端 commit 新勾选,再重算并发信号:本页条带与其他页/头部轴都按新勾选取文案
   await api(`/trips/${r.id}`, { method: 'PATCH', body: JSON.stringify({ saturated }) })
   r.saturated = saturated
+  bumpSaturation()
   await refreshEvents()
-}
-function stripClass(s: string) {
-  return s === 'bunching' ? 'bg-bunch' : s === 'bunching_saturated' ? 'bg-severe' : s === 'large_gap' ? 'bg-large' : ''
-}
-function label(s: string) {
-  return s === 'bunching' || s === 'bunching_saturated' ? '串车' : s === 'large_gap' ? '大间隔' : '正常'
-}
-function badgeClass(s: string) {
-  return s === 'bunching' ? 'badge-bad' : s === 'bunching_saturated' ? 'badge-severe' : s === 'large_gap' ? 'badge-warn' : 'badge-ok'
 }
 </script>
 <template>
   <h1>班次 · 间隔条带</h1>
   <p class="sub">左侧班次清单(可勾载客饱和),右侧串车/间隔竖直条带</p>
-  <p class="muted">业务页与检测读口未强制同参与集</p>
   <div class="bg-split">
     <aside class="bg-trip-col">
       <h2>班次列表</h2>
@@ -62,8 +56,9 @@ function badgeClass(s: string) {
           <div>计划 {{ e.planned_headway_min }}′</div>
           <div>{{ e.earlier_trip }} → {{ e.later_trip }}</div>
           <span class="badge" :class="badgeClass(e.status)">
-            {{ label(e.status) }}
+            {{ unifyStatusLabel(e.status) }}
           </span>
+          <p class="bg-gap-suggest">{{ e.suggestion }}</p>
         </div>
       </article>
       <p v-if="!events.length" class="muted">暂无间隔事件</p>

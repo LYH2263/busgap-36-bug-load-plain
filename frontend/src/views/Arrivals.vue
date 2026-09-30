@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
+import { bumpSaturation } from '../saturationBus'
 const rows = ref<any[]>([])
 onMounted(async () => { rows.value = await api('/arrivals') })
 async function toggleSaturated(r: any, ev: Event) {
   const saturated = (ev.target as HTMLInputElement).checked
+  // 等后端 commit 新勾选后再发重算信号,各端按新勾选重检
   await api(`/arrivals/${r.id}`, { method: 'PATCH', body: JSON.stringify({ saturated }) })
   r.saturated = saturated
+  bumpSaturation()
 }
 </script>
 <template>

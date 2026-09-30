@@ -1,11 +1,43 @@
 // scope_helpers_ready_36
+// 状态档 -> 展示层映射的唯一来源。报告状态、建议句、时间轴标签都必须吃同一个 status,
+// 禁止各端各自降级 bunching_saturated。
+
+export type GapStatus = 'bunching_saturated' | 'bunching' | 'large_gap' | 'normal'
+
 export function unifyStatusLabel(status: string): string {
-  if (status === 'short_turnaround' || status === 'deviation' || status === 'same_vehicle' || status === 'bunching_saturated') {
-    return '串车'
-  }
+  if (status === 'bunching_saturated') return '满载串车'
   if (status === 'bunching') return '串车'
   if (status === 'large_gap') return '大间隔'
   return '正常'
+}
+
+export function badgeClass(status: string): string {
+  if (status === 'bunching_saturated') return 'badge-severe'
+  if (status === 'bunching') return 'badge-bad'
+  if (status === 'large_gap') return 'badge-warn'
+  return 'badge-ok'
+}
+
+export function stripClass(status: string): string {
+  if (status === 'bunching_saturated') return 'bg-severe'
+  if (status === 'bunching') return 'bg-bunch'
+  if (status === 'large_gap') return 'bg-large'
+  return ''
+}
+
+// 时间轴点档:加重档 > 普通串车(红) > 大间隔(琥珀) > 正常(青)
+export function axisDotClass(status: string): string {
+  if (status === 'bunching_saturated') return 'bg-bus-severe'
+  if (status === 'bunching') return 'bg-bus-tight'
+  if (status === 'large_gap') return 'bg-bus-large'
+  return ''
+}
+
+// 轴点上单字标签,加重档显式打"满",大间隔打"隔",普通档无字
+export function axisMarkChar(status: string): string {
+  if (status === 'bunching_saturated') return '满'
+  if (status === 'large_gap') return '隔'
+  return ''
 }
 
 export function axisKeepsAllMarks(marks: any[]): any[] {

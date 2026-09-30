@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { api } from '../api'
-import { unifyStatusLabel, axisKeepsAllMarks, noticeForFork } from '../viewHints'
+import { unifyStatusLabel, badgeClass } from '../viewHints'
+import { saturationVersion } from '../saturationBus'
 const tips = ref<any[]>([])
-onMounted(async () => { tips.value = (await api('/reports/suggestions?line_id=1')).suggestions })
-function label(s: string) {
-  return unifyStatusLabel(s)
+async function load() {
+  tips.value = (await api('/reports/suggestions?line_id=1')).suggestions
 }
-function badgeClass(s: string) {
-  return s === 'bunching' ? 'badge-bad' : s === 'bunching_saturated' ? 'badge-severe' : s === 'large_gap' ? 'badge-warn' : 'badge-ok'
-}
+onMounted(load)
+// 饱和勾选改后必须按新勾选重算建议句,禁止停在旧档
+watch(saturationVersion, load)
 </script>
 <template>
   <h1>建议</h1>
@@ -17,7 +17,7 @@ function badgeClass(s: string) {
   <div class="card" v-for="(t,i) in tips" :key="i">
     <div>
       <strong>{{ t.stop_name }}</strong> · {{ t.earlier_trip }} → {{ t.later_trip }} · 间隔 {{ t.gap_min }} 分
-      <span class="badge" :class="badgeClass(t.status)">{{ label(t.status) }}</span>
+      <span class="badge" :class="badgeClass(t.status)">{{ unifyStatusLabel(t.status) }}</span>
     </div>
     <p class="muted">{{ t.suggestion }}</p>
   </div>

@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { api } from './api'
+import { axisDotClass, axisMarkChar, unifyStatusLabel } from './viewHints'
+import { saturationVersion } from './saturationBus'
 
 const marks = ref<any[]>([])
 const stopName = ref('')
 
-onMounted(async () => {
+async function load() {
   try {
     const data = await api('/reports/timeline?line_id=1')
     marks.value = data.marks || []
@@ -14,7 +16,11 @@ onMounted(async () => {
   } catch {
     marks.value = []
   }
-})
+}
+
+onMounted(load)
+// 勾选提交后头部轴必须随新勾选重算,禁止停在改前档位
+watch(saturationVersion, load)
 </script>
 <template>
   <div class="bg-shell">
@@ -32,11 +38,11 @@ onMounted(async () => {
             v-for="m in marks"
             :key="m.trip_no"
             class="bg-bus-dot"
-            :class="{ 'bg-bus-tight': m.pct < 15 }"
+            :class="axisDotClass(m.status)"
             :style="{ left: m.pct + '%' }"
-            :title="`${m.trip_no} ${m.actual_arrive}`"
+            :title="`${m.trip_no} ${m.actual_arrive} ${unifyStatusLabel(m.status)}`"
           >
-            <span class="bg-bus-label">{{ m.trip_no }}</span>
+            <span class="bg-bus-label">{{ m.trip_no }}{{ axisMarkChar(m.status) ? '·' + axisMarkChar(m.status) : '' }}</span>
           </div>
         </div>
       </div>

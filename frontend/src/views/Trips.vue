@@ -1,28 +1,35 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { api } from '../api'
+import { notifyDataChanged, onDataChanged, unifyStatusLabel } from '../viewHints'
 const trips = ref<any[]>([])
 const events = ref<any[]>([])
 async function refreshEvents() {
+  // 每次按库内最新勾选现算
   try {
     events.value = (await api('/reports/run?line_id=1', { method: 'POST' })).events || []
   } catch { events.value = [] }
 }
+let off: (() => void) | undefined
 onMounted(async () => {
   trips.value = await api('/trips')
   await refreshEvents()
+  off = onDataChanged(refreshEvents)
 })
+onUnmounted(() => off?.())
 async function toggleSaturated(r: any, ev: Event) {
   const saturated = (ev.target as HTMLInputElement).checked
-  await api(`/trips/${r.id}`, { method: 'PATCH', body: JSON.stringify({ saturated }) })
-  r.saturated = saturated
+  const saved = await api(`/trips/${r.id}`, { method: 'PATCH', body: JSON.stringify({ saturated }) })
+  r.saturated = saved.saturated
+  // 提交瞬间先按新勾选重算,再广播给顶部轴等视图
   await refreshEvents()
+  notifyDataChanged()
 }
 function stripClass(s: string) {
   return s === 'bunching' ? 'bg-bunch' : s === 'bunching_saturated' ? 'bg-severe' : s === 'large_gap' ? 'bg-large' : ''
 }
 function label(s: string) {
-  return s === 'bunching' || s === 'bunching_saturated' ? '串车' : s === 'large_gap' ? '大间隔' : '正常'
+  return unifyStatusLabel(s)
 }
 function badgeClass(s: string) {
   return s === 'bunching' ? 'badge-bad' : s === 'bunching_saturated' ? 'badge-severe' : s === 'large_gap' ? 'badge-warn' : 'badge-ok'
@@ -31,7 +38,7 @@ function badgeClass(s: string) {
 <template>
   <h1>班次 · 间隔条带</h1>
   <p class="sub">左侧班次清单(可勾载客饱和),右侧串车/间隔竖直条带</p>
-  <p class="muted">业务页与检测读口未强制同参与集</p>
+  <p class="muted">状态、建议句与时间轴标签同源同档</p>
   <div class="bg-split">
     <aside class="bg-trip-col">
       <h2>班次列表</h2>
@@ -64,6 +71,7 @@ function badgeClass(s: string) {
           <span class="badge" :class="badgeClass(e.status)">
             {{ label(e.status) }}
           </span>
+          <p class="muted">{{ e.suggestion }}</p>
         </div>
       </article>
       <p v-if="!events.length" class="muted">暂无间隔事件</p>

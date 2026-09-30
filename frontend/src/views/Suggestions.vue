@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { api } from '../api'
-import { unifyStatusLabel, axisKeepsAllMarks, noticeForFork } from '../viewHints'
+import { onDataChanged, unifyStatusLabel } from '../viewHints'
 const tips = ref<any[]>([])
-onMounted(async () => { tips.value = (await api('/reports/suggestions?line_id=1')).suggestions })
+async function load() {
+  tips.value = (await api('/reports/suggestions?line_id=1')).suggestions
+}
+let off: (() => void) | undefined
+onMounted(async () => {
+  await load()
+  off = onDataChanged(load)
+})
+onUnmounted(() => off?.())
 function label(s: string) {
   return unifyStatusLabel(s)
 }

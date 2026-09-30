@@ -62,6 +62,11 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 0 10px rgba(46,196,255,0.55);
 }
 .bg-bus-dot.bg-bus-tight { background: var(--bg-red); box-shadow: 0 0 12px rgba(255,77,109,0.6); }
+.bg-bus-dot.bg-bus-severe {
+  background: var(--bg-red);
+  box-shadow: 0 0 16px rgba(255,77,109,0.95), inset 0 0 0 2px rgba(255,255,255,0.85);
+}
+.bg-bus-dot.bg-bus-large { background: var(--bg-amber); box-shadow: 0 0 12px rgba(255,176,32,0.6); }
 .bg-bus-label {
   position: absolute; top: -1.05rem; left: 50%; transform: translateX(-50%);
   font-size: 0.62rem; white-space: nowrap; color: var(--bg-text); opacity: 0.85;
@@ -191,4 +196,9 @@ th { color: var(--bg-dim); font-weight: 600; font-size: 0.78rem; }
 .tl-mark {
   position: absolute; top: 8px; width: 10px; height: 32px;
   border-radius: 2px; transform: translateX(-50%);
+  background: var(--bg-cyan);
 }
+.tl-mark.tl-bunching { background: var(--bg-red); }
+.tl-mark.tl-bunching_saturated { background: var(--bg-red); box-shadow: 0 0 12px rgba(255,77,109,0.9), inset 0 0 0 2px rgba(255,255,255,0.85); }
+.tl-mark.tl-large_gap { background: var(--bg-amber); }
+.tl-mark.tl-normal { background: var(--bg-cyan); }

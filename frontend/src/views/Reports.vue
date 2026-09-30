@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { api } from '../api'
-import { unifyStatusLabel, axisKeepsAllMarks, noticeForFork } from '../viewHints'
+import { onDataChanged, unifyStatusLabel } from '../viewHints'
 const trips = ref<any[]>([])
 const events = ref<any[]>([])
 const loading = ref(false)
@@ -11,10 +11,13 @@ async function run() {
     events.value = (await api('/reports/run?line_id=1', { method: 'POST' })).events || []
   } finally { loading.value = false }
 }
+let off: (() => void) | undefined
 onMounted(async () => {
   trips.value = await api('/trips')
   await run()
+  off = onDataChanged(run)
 })
+onUnmounted(() => off?.())
 function stripClass(s: string) {
   return s === 'bunching' ? 'bg-bunch' : s === 'bunching_saturated' ? 'bg-severe' : s === 'large_gap' ? 'bg-large' : ''
 }
@@ -55,6 +58,7 @@ function badgeClass(s: string) {
           <span class="badge" :class="badgeClass(e.status)">
             {{ label(e.status) }}
           </span>
+          <p class="muted">{{ e.suggestion }}</p>
         </div>
       </article>
     </div>

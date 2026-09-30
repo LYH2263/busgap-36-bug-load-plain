@@ -1,11 +1,32 @@
 // scope_helpers_ready_36
+// 状态档位标签必须与后端 bunch_engine.STATUS_LABELS 完全同档:
+// bunching_saturated 是加重档,不得显示成普通「串车」。
 export function unifyStatusLabel(status: string): string {
-  if (status === 'short_turnaround' || status === 'deviation' || status === 'same_vehicle' || status === 'bunching_saturated') {
+  if (status === 'bunching_saturated') return '满载串车'
+  if (status === 'short_turnaround' || status === 'deviation' || status === 'same_vehicle') {
     return '串车'
   }
   if (status === 'bunching') return '串车'
   if (status === 'large_gap') return '大间隔'
   return '正常'
+}
+
+// 时间轴点按同源档位着色,不再按位置百分比猜测
+export function axisMarkClass(status: string): string {
+  if (status === 'bunching_saturated') return 'bg-bus-severe'
+  if (status === 'bunching') return 'bg-bus-tight'
+  if (status === 'large_gap') return 'bg-bus-large'
+  return ''
+}
+
+// 饱和勾选提交后广播:顶部轴 / 各页面必须按新勾选举证,禁止吃改前缓存
+const CHANGE_EVENT = 'busgap:data-changed'
+export function notifyDataChanged(): void {
+  window.dispatchEvent(new CustomEvent(CHANGE_EVENT))
+}
+export function onDataChanged(handler: () => void): () => void {
+  window.addEventListener(CHANGE_EVENT, handler)
+  return () => window.removeEventListener(CHANGE_EVENT, handler)
 }
 
 export function axisKeepsAllMarks(marks: any[]): any[] {

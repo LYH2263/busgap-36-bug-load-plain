@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
+import { notifyDataChanged } from '../viewHints'
 const rows = ref<any[]>([])
 onMounted(async () => { rows.value = await api('/arrivals') })
 async function toggleSaturated(r: any, ev: Event) {
   const saturated = (ev.target as HTMLInputElement).checked
-  await api(`/arrivals/${r.id}`, { method: 'PATCH', body: JSON.stringify({ saturated }) })
-  r.saturated = saturated
+  // 以服务端确认的新勾选为准,提交完成瞬间广播重算,不保留改前缓存
+  const saved = await api(`/arrivals/${r.id}`, { method: 'PATCH', body: JSON.stringify({ saturated }) })
+  r.saturated = saved.saturated
+  notifyDataChanged()
 }
 </script>
 <template>
